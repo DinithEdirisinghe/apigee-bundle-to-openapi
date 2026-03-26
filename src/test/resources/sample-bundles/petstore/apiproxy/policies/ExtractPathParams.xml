@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ExtractVariables continueOnError="true" enabled="true" name="ExtractPathParams">
+    <DisplayName>Extract Path Parameters</DisplayName>
+    <Source clearPayload="false">request</Source>
+    <URIPath>
+        <Pattern ignoreCase="true">/pets/{petId}</Pattern>
+    </URIPath>
+    <VariablePrefix>pathParam</VariablePrefix>
+    <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+</ExtractVariables>

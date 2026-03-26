@@ -1,0 +1,6 @@
+com.apigee.openapi.converter
+com.apigee.openapi.converter.extractor
+com.apigee.openapi.converter.generator
+com.apigee.openapi.converter.model
+com.apigee.openapi.converter.output
+com.apigee.openapi.converter.parser

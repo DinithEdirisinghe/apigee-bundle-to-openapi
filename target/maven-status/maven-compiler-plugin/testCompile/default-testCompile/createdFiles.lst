@@ -1,0 +1,3 @@
+com\apigee\openapi\converter\FlowConditionParserTest.class
+com\apigee\openapi\converter\ApigeeToOpenApiConverterTest.class
+com\apigee\openapi\converter\QuickConvert.class
