@@ -22,6 +22,8 @@ import com.apigee.openapi.converter.model.TargetEndpoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -30,6 +32,7 @@ import java.util.Enumeration;
 import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 /**
  * Main parser for Apigee API proxy bundles.
@@ -95,6 +98,144 @@ public class BundleParser {
         
         log.info("Parsed bundle: {}", bundle);
         return bundle;
+    }
+
+    /**
+     * Parses an Apigee bundle from a ZIP InputStream.
+     * This is useful when downloading bundles directly from the Apigee Management API.
+     *
+     * @param zipInputStream InputStream containing the ZIP bundle
+     * @return Parsed ApigeeBundle
+     * @throws IOException if parsing fails
+     */
+    public ApigeeBundle parseZipStream(InputStream zipInputStream) throws IOException {
+        log.info("Parsing Apigee bundle from InputStream");
+        
+        ApigeeBundle bundle = new ApigeeBundle();
+        
+        // We need to read the stream into memory to process multiple passes
+        // (first pass to find apiproxy root, second to parse contents)
+        byte[] zipBytes = readAllBytes(zipInputStream);
+        
+        try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zipBytes))) {
+            // First pass: find the apiproxy root
+            String apiproxyRoot = findApiproxyRootFromStream(zipBytes);
+            
+            // Process entries
+            parseFromZipBytes(bundle, zipBytes, apiproxyRoot);
+        }
+        
+        log.info("Parsed bundle from stream: {}", bundle);
+        return bundle;
+    }
+
+    private byte[] readAllBytes(InputStream inputStream) throws IOException {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        byte[] data = new byte[8192];
+        int bytesRead;
+        while ((bytesRead = inputStream.read(data, 0, data.length)) != -1) {
+            buffer.write(data, 0, bytesRead);
+        }
+        return buffer.toByteArray();
+    }
+
+    private String findApiproxyRootFromStream(byte[] zipBytes) throws IOException {
+        try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zipBytes))) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                String name = entry.getName();
+                if (name.endsWith("/apiproxy/") || name.equals("apiproxy/")) {
+                    return name;
+                }
+                if (name.contains("/apiproxy/proxies/") || name.startsWith("apiproxy/proxies/")) {
+                    int idx = name.indexOf("apiproxy/");
+                    return name.substring(0, idx + "apiproxy/".length());
+                }
+                zis.closeEntry();
+            }
+        }
+        // Default to "apiproxy/" if not found
+        return "apiproxy/";
+    }
+
+    private void parseFromZipBytes(ApigeeBundle bundle, byte[] zipBytes, String apiproxyRoot) throws IOException {
+        try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zipBytes))) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                String name = entry.getName();
+                
+                if (entry.isDirectory()) {
+                    zis.closeEntry();
+                    continue;
+                }
+                
+                // Read entry content
+                byte[] entryBytes = readEntryBytes(zis);
+                InputStream entryStream = new ByteArrayInputStream(entryBytes);
+                
+                // Parse proxy descriptor (XML at root of apiproxy)
+                if (name.startsWith(apiproxyRoot) && name.endsWith(".xml")) {
+                    String relativePath = name.substring(apiproxyRoot.length());
+                    
+                    if (!relativePath.contains("/") && !relativePath.isEmpty()) {
+                        // Proxy descriptor at root
+                        try {
+                            proxyDescriptorParser.parse(entryStream, bundle);
+                            if (bundle.getName() == null) {
+                                bundle.setName(relativePath.replace(".xml", ""));
+                            }
+                        } catch (Exception e) {
+                            log.warn("Failed to parse proxy descriptor: {}", name, e);
+                        }
+                    } else if (name.startsWith(apiproxyRoot + "proxies/")) {
+                        // Proxy endpoint
+                        try {
+                            entryStream = new ByteArrayInputStream(entryBytes);
+                            ProxyEndpoint endpoint = proxyEndpointParser.parse(entryStream);
+                            bundle.addProxyEndpoint(endpoint);
+                            if (bundle.getBasePath() == null && endpoint.getBasePath() != null) {
+                                bundle.setBasePath(endpoint.getBasePath());
+                            }
+                            log.debug("Parsed proxy endpoint: {}", endpoint.getName());
+                        } catch (Exception e) {
+                            log.warn("Failed to parse proxy endpoint: {}", name, e);
+                        }
+                    } else if (name.startsWith(apiproxyRoot + "targets/")) {
+                        // Target endpoint
+                        try {
+                            entryStream = new ByteArrayInputStream(entryBytes);
+                            TargetEndpoint endpoint = targetEndpointParser.parse(entryStream);
+                            bundle.addTargetEndpoint(endpoint);
+                            log.debug("Parsed target endpoint: {}", endpoint.getName());
+                        } catch (Exception e) {
+                            log.warn("Failed to parse target endpoint: {}", name, e);
+                        }
+                    } else if (name.startsWith(apiproxyRoot + "policies/")) {
+                        // Policy
+                        try {
+                            entryStream = new ByteArrayInputStream(entryBytes);
+                            Policy policy = policyParser.parse(entryStream);
+                            bundle.addPolicy(policy);
+                            log.debug("Parsed policy: {} ({})", policy.getName(), policy.getType());
+                        } catch (Exception e) {
+                            log.warn("Failed to parse policy: {}", name, e);
+                        }
+                    }
+                }
+                
+                zis.closeEntry();
+            }
+        }
+    }
+
+    private byte[] readEntryBytes(ZipInputStream zis) throws IOException {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        byte[] data = new byte[4096];
+        int bytesRead;
+        while ((bytesRead = zis.read(data, 0, data.length)) != -1) {
+            buffer.write(data, 0, bytesRead);
+        }
+        return buffer.toByteArray();
     }
 
     /**

@@ -9,10 +9,13 @@ com\apigee\openapi\converter\model\Policy$ParameterInfo.class
 com\apigee\openapi\converter\extractor\SecurityExtractor$SecurityExtractionResult.class
 com\apigee\openapi\converter\extractor\SecurityExtractor$SecurityScheme$In.class
 com\apigee\openapi\converter\extractor\SecurityExtractor$SecurityScheme$Type.class
+com\apigee\openapi\converter\ApigeeManagementApiClient$ApigeeApiException.class
 com\apigee\openapi\converter\model\Policy$PolicyType.class
 com\apigee\openapi\converter\ApigeeToOpenApiConverter.class
 com\apigee\openapi\converter\extractor\PathExtractor$ExtractedOperation.class
 com\apigee\openapi\converter\output\OpenApiWriter$OutputFormat.class
+com\apigee\openapi\converter\ApigeeApiConfig.class
+com\apigee\openapi\converter\ApigeeApiTest.class
 com\apigee\openapi\converter\generator\OpenApiGenerator$1.class
 com\apigee\openapi\converter\ConversionResult$Builder.class
 com\apigee\openapi\converter\extractor\ParameterExtractor.class
@@ -24,6 +27,7 @@ com\apigee\openapi\converter\parser\PolicyParser$1.class
 com\apigee\openapi\converter\parser\ProxyEndpointParser.class
 com\apigee\openapi\converter\model\Flow.class
 com\apigee\openapi\converter\ApigeeToOpenApiConverter$ConversionException.class
+com\apigee\openapi\converter\ApigeeApiConfig$Builder.class
 com\apigee\openapi\converter\extractor\SecurityExtractor.class
 com\apigee\openapi\converter\model\Flow$FlowType.class
 com\apigee\openapi\converter\model\TargetEndpoint.class
@@ -35,6 +39,7 @@ com\apigee\openapi\converter\parser\ProxyDescriptorParser.class
 com\apigee\openapi\converter\ConversionResult.class
 com\apigee\openapi\converter\extractor\PathExtractor.class
 com\apigee\openapi\converter\parser\FlowConditionParser.class
+com\apigee\openapi\converter\ApigeeManagementApiClient.class
 com\apigee\openapi\converter\model\ProxyEndpoint.class
 com\apigee\openapi\converter\model\RouteRule.class
 com\apigee\openapi\converter\parser\TargetEndpointParser.class

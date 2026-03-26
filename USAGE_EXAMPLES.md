@@ -1,6 +1,179 @@
 # Usage Examples
 
-## Basic Usage
+## Quick Start: Convert from Apigee API (Recommended)
+
+The easiest way to use this library is to connect directly to your Apigee organization:
+
+```java
+import com.apigee.openapi.converter.ApigeeToOpenApiConverter;
+import com.apigee.openapi.converter.ApigeeApiConfig;
+
+public class QuickStart {
+    public static void main(String[] args) throws Exception {
+        // Configure Apigee connection
+        ApigeeApiConfig config = ApigeeApiConfig.builder()
+            .organization("my-gcp-project")
+            .serviceAccountKeyPath("/path/to/service-account.json")
+            .build();
+
+        // Convert proxy to OpenAPI YAML - one line!
+        ApigeeToOpenApiConverter converter = new ApigeeToOpenApiConverter();
+        String yaml = converter.convertFromApigeeToYaml(config, "my-proxy");
+        
+        System.out.println(yaml);
+    }
+}
+```
+
+## Apigee API Examples
+
+### Example A1: Download and Convert Latest Revision
+```java
+import com.apigee.openapi.converter.*;
+import java.nio.file.Path;
+
+public class ApiExample1 {
+    public static void main(String[] args) throws Exception {
+        // Configure with service account
+        ApigeeApiConfig config = ApigeeApiConfig.builder()
+            .organization("my-gcp-project")
+            .serviceAccountKeyPath("service-account.json")
+            .build();
+
+        ApigeeToOpenApiConverter converter = new ApigeeToOpenApiConverter();
+        
+        // Download and convert
+        ConversionResult result = converter.convertFromApigee(config, "weather-api");
+        
+        System.out.println("Bundle: " + result.getBundleName());
+        System.out.println("Paths: " + result.getPathCount());
+        System.out.println("Operations: " + result.getOperationCount());
+        
+        // Get as YAML string
+        String yaml = converter.writeToString(result.getOpenAPI(), OutputFormat.YAML);
+        System.out.println(yaml);
+    }
+}
+```
+
+### Example A2: Convert Specific Revision with Custom Options
+```java
+import com.apigee.openapi.converter.*;
+
+public class ApiExample2 {
+    public static void main(String[] args) throws Exception {
+        ApigeeApiConfig config = ApigeeApiConfig.builder()
+            .organization("my-gcp-project")
+            .serviceAccountKeyPath("service-account.json")
+            .build();
+
+        ConversionOptions options = ConversionOptions.builder()
+            .title("Weather API")
+            .version("2.0.0")
+            .description("Real-time weather data")
+            .serverUrl("https://api.weather.example.com/v2")
+            .contactEmail("api@weather.example.com")
+            .build();
+
+        ApigeeToOpenApiConverter converter = new ApigeeToOpenApiConverter();
+        
+        // Convert specific revision "5"
+        ConversionResult result = converter.convertFromApigee(
+            config, 
+            "weather-api", 
+            "5",    // specific revision
+            options
+        );
+        
+        System.out.println("Converted revision 5: " + result.getPathCount() + " paths");
+    }
+}
+```
+
+### Example A3: List Proxies and Convert All
+```java
+import com.apigee.openapi.converter.*;
+import java.nio.file.*;
+import java.util.List;
+
+public class ApiExample3 {
+    public static void main(String[] args) throws Exception {
+        ApigeeApiConfig config = ApigeeApiConfig.builder()
+            .organization("my-gcp-project")
+            .serviceAccountKeyPath("service-account.json")
+            .build();
+
+        ApigeeToOpenApiConverter converter = new ApigeeToOpenApiConverter();
+        ApigeeManagementApiClient client = converter.createApiClient(config);
+        
+        // List all proxies
+        List<String> proxies = client.listProxies();
+        System.out.println("Found " + proxies.size() + " proxies");
+        
+        // Convert each one
+        Path outputDir = Path.of("openapi-specs");
+        Files.createDirectories(outputDir);
+        
+        for (String proxyName : proxies) {
+            try {
+                converter.convertFromApigeeAndSave(
+                    config,
+                    proxyName,
+                    outputDir.resolve(proxyName + ".yaml"),
+                    ConversionOptions.defaults()
+                );
+                System.out.println("✅ Converted: " + proxyName);
+            } catch (Exception e) {
+                System.err.println("❌ Failed: " + proxyName + " - " + e.getMessage());
+            }
+        }
+    }
+}
+```
+
+### Example A4: Using Application Default Credentials
+```java
+import com.apigee.openapi.converter.*;
+
+public class ApiExample4 {
+    public static void main(String[] args) throws Exception {
+        // Use GOOGLE_APPLICATION_CREDENTIALS env var or default credentials
+        ApigeeApiConfig config = ApigeeApiConfig.builder()
+            .organization("my-gcp-project")
+            .useApplicationDefaultCredentials()
+            .build();
+
+        ApigeeToOpenApiConverter converter = new ApigeeToOpenApiConverter();
+        String yaml = converter.convertFromApigeeToYaml(config, "my-proxy");
+        System.out.println(yaml);
+    }
+}
+```
+
+### Example A5: Using Service Account JSON String (from environment/secrets)
+```java
+import com.apigee.openapi.converter.*;
+
+public class ApiExample5 {
+    public static void main(String[] args) throws Exception {
+        // Get JSON from environment variable or secrets manager
+        String jsonKey = System.getenv("APIGEE_SERVICE_ACCOUNT_JSON");
+        
+        ApigeeApiConfig config = ApigeeApiConfig.builder()
+            .organization("my-gcp-project")
+            .serviceAccountKeyJson(jsonKey)
+            .build();
+
+        ApigeeToOpenApiConverter converter = new ApigeeToOpenApiConverter();
+        String yaml = converter.convertFromApigeeToYaml(config, "my-proxy");
+        System.out.println(yaml);
+    }
+}
+```
+
+---
+
+## Local File Examples
 
 ### Example 1: Convert Bundle to YAML
 ```java

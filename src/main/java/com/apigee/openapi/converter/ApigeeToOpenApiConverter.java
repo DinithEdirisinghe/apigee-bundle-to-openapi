@@ -21,6 +21,7 @@ import com.apigee.openapi.converter.output.OpenApiWriter;
 import com.apigee.openapi.converter.output.OpenApiWriter.OpenApiWriterException;
 import com.apigee.openapi.converter.output.OpenApiWriter.OutputFormat;
 import com.apigee.openapi.converter.parser.BundleParser;
+import com.apigee.openapi.converter.ApigeeManagementApiClient.ApigeeApiException;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
 import org.slf4j.Logger;
@@ -276,6 +277,235 @@ public class ApigeeToOpenApiConverter {
         } catch (OpenApiWriterException e) {
             throw new ConversionException("Failed to write file: " + path, e);
         }
+    }
+
+    // ==================== Apigee Management API Methods ====================
+
+    /**
+     * Converts an Apigee proxy bundle by downloading it directly from the Apigee Management API.
+     * Downloads the latest revision of the specified proxy.
+     * 
+     * <h3>Example:</h3>
+     * <pre>{@code
+     * ApigeeApiConfig config = ApigeeApiConfig.builder()
+     *     .organization("my-org")
+     *     .serviceAccountKeyPath("/path/to/service-account.json")
+     *     .build();
+     * 
+     * ConversionResult result = converter.convertFromApigee(config, "my-proxy");
+     * String yaml = converter.writeToString(result.getOpenAPI(), OutputFormat.YAML);
+     * }</pre>
+     *
+     * @param config    Apigee API configuration with credentials
+     * @param proxyName Name of the proxy to convert
+     * @return Conversion result containing the OpenAPI specification
+     * @throws ConversionException if conversion fails
+     */
+    public ConversionResult convertFromApigee(ApigeeApiConfig config, String proxyName) 
+            throws ConversionException {
+        return convertFromApigee(config, proxyName, null, ConversionOptions.defaults());
+    }
+
+    /**
+     * Converts an Apigee proxy bundle by downloading it directly from the Apigee Management API.
+     * Downloads the latest revision of the specified proxy.
+     *
+     * @param config    Apigee API configuration with credentials
+     * @param proxyName Name of the proxy to convert
+     * @param options   Conversion options
+     * @return Conversion result containing the OpenAPI specification
+     * @throws ConversionException if conversion fails
+     */
+    public ConversionResult convertFromApigee(ApigeeApiConfig config, String proxyName, 
+            ConversionOptions options) throws ConversionException {
+        return convertFromApigee(config, proxyName, null, options);
+    }
+
+    /**
+     * Converts an Apigee proxy bundle by downloading a specific revision from the Apigee Management API.
+     * 
+     * <h3>Example:</h3>
+     * <pre>{@code
+     * ApigeeApiConfig config = ApigeeApiConfig.builder()
+     *     .organization("my-org")
+     *     .serviceAccountKeyPath("/path/to/service-account.json")
+     *     .build();
+     * 
+     * ConversionOptions options = ConversionOptions.builder()
+     *     .title("My API")
+     *     .version("1.0.0")
+     *     .build();
+     * 
+     * ConversionResult result = converter.convertFromApigee(config, "my-proxy", "5", options);
+     * }</pre>
+     *
+     * @param config    Apigee API configuration with credentials
+     * @param proxyName Name of the proxy to convert
+     * @param revision  Specific revision to download (null for latest)
+     * @param options   Conversion options
+     * @return Conversion result containing the OpenAPI specification
+     * @throws ConversionException if conversion fails
+     */
+    public ConversionResult convertFromApigee(ApigeeApiConfig config, String proxyName, 
+            String revision, ConversionOptions options) throws ConversionException {
+        
+        long startTime = System.currentTimeMillis();
+        List<String> warnings = new ArrayList<>();
+        
+        log.info("Converting proxy '{}' from Apigee organization '{}'", 
+                proxyName, config.getOrganization());
+        
+        try {
+            // Create API client
+            ApigeeManagementApiClient apiClient = new ApigeeManagementApiClient(config);
+            
+            // Download the bundle
+            InputStream bundleStream;
+            String actualRevision;
+            
+            if (revision != null && !revision.isEmpty()) {
+                actualRevision = revision;
+                bundleStream = apiClient.downloadBundle(proxyName, revision);
+            } else {
+                actualRevision = apiClient.getLatestRevision(proxyName);
+                bundleStream = apiClient.downloadBundle(proxyName, actualRevision);
+                log.info("Using latest revision: {}", actualRevision);
+            }
+            
+            // Parse the bundle from stream
+            ApigeeBundle bundle;
+            try {
+                bundle = bundleParser.parseZipStream(bundleStream);
+            } finally {
+                bundleStream.close();
+            }
+            
+            if (bundle.getProxyEndpoints().isEmpty()) {
+                warnings.add("No proxy endpoints found in bundle");
+            }
+
+            // Generate OpenAPI spec
+            OpenAPI openAPI = openApiGenerator.generate(bundle, options);
+
+            // Count operations and paths
+            int pathCount = openAPI.getPaths() != null ? openAPI.getPaths().size() : 0;
+            int operationCount = countOperations(openAPI);
+
+            // Determine if fallback was used
+            boolean usedFallback = pathCount == 1 && 
+                    openAPI.getPaths() != null && 
+                    openAPI.getPaths().containsKey("/");
+
+            if (usedFallback) {
+                warnings.add("Used fallback extraction - proxy has no explicit conditional flows");
+            }
+
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("Conversion completed in {}ms: {} paths, {} operations (revision {})", 
+                    duration, pathCount, operationCount, actualRevision);
+
+            return ConversionResult.builder()
+                    .openAPI(openAPI)
+                    .bundleName(bundle.getName())
+                    .pathCount(pathCount)
+                    .operationCount(operationCount)
+                    .usedFallbackExtraction(usedFallback)
+                    .warnings(warnings)
+                    .conversionTimeMs(duration)
+                    .build();
+            
+        } catch (ApigeeApiException e) {
+            throw new ConversionException("Apigee API error: " + e.getMessage(), e);
+        } catch (IOException e) {
+            throw new ConversionException("Failed to process bundle: " + e.getMessage(), e);
+        } catch (Exception e) {
+            throw new ConversionException("Conversion failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Converts an Apigee proxy and saves the result to a file.
+     * Downloads the bundle from the Apigee Management API.
+     *
+     * @param config     Apigee API configuration
+     * @param proxyName  Name of the proxy
+     * @param outputPath Path for the output file
+     * @param options    Conversion options
+     * @return Conversion result
+     * @throws ConversionException if conversion or writing fails
+     */
+    public ConversionResult convertFromApigeeAndSave(ApigeeApiConfig config, String proxyName,
+            Path outputPath, ConversionOptions options) throws ConversionException {
+        return convertFromApigeeAndSave(config, proxyName, null, outputPath, options);
+    }
+
+    /**
+     * Converts a specific revision of an Apigee proxy and saves the result to a file.
+     *
+     * @param config     Apigee API configuration
+     * @param proxyName  Name of the proxy
+     * @param revision   Specific revision (null for latest)
+     * @param outputPath Path for the output file
+     * @param options    Conversion options
+     * @return Conversion result
+     * @throws ConversionException if conversion or writing fails
+     */
+    public ConversionResult convertFromApigeeAndSave(ApigeeApiConfig config, String proxyName,
+            String revision, Path outputPath, ConversionOptions options) throws ConversionException {
+        
+        ConversionResult result = convertFromApigee(config, proxyName, revision, options);
+        
+        try {
+            OutputFormat format = options.getOutputFormat();
+            if (format == null) {
+                format = openApiWriter.inferFormat(outputPath);
+            }
+            openApiWriter.writeToFile(result.getOpenAPI(), outputPath, format);
+            return result;
+        } catch (OpenApiWriterException e) {
+            throw new ConversionException("Failed to write output file: " + outputPath, e);
+        }
+    }
+
+    /**
+     * Converts an Apigee proxy and returns the OpenAPI spec as a YAML string.
+     * Downloads the latest revision from the Apigee Management API.
+     *
+     * @param config    Apigee API configuration
+     * @param proxyName Name of the proxy
+     * @return OpenAPI specification as YAML string
+     * @throws ConversionException if conversion fails
+     */
+    public String convertFromApigeeToYaml(ApigeeApiConfig config, String proxyName) 
+            throws ConversionException {
+        ConversionResult result = convertFromApigee(config, proxyName);
+        return writeToString(result.getOpenAPI(), OutputFormat.YAML);
+    }
+
+    /**
+     * Converts an Apigee proxy and returns the OpenAPI spec as a JSON string.
+     * Downloads the latest revision from the Apigee Management API.
+     *
+     * @param config    Apigee API configuration
+     * @param proxyName Name of the proxy
+     * @return OpenAPI specification as JSON string
+     * @throws ConversionException if conversion fails
+     */
+    public String convertFromApigeeToJson(ApigeeApiConfig config, String proxyName) 
+            throws ConversionException {
+        ConversionResult result = convertFromApigee(config, proxyName);
+        return writeToString(result.getOpenAPI(), OutputFormat.JSON);
+    }
+
+    /**
+     * Creates an ApigeeManagementApiClient using the provided configuration.
+     * Useful for listing proxies or performing other API operations.
+     *
+     * @param config Apigee API configuration
+     * @return ApigeeManagementApiClient instance
+     */
+    public ApigeeManagementApiClient createApiClient(ApigeeApiConfig config) {
+        return new ApigeeManagementApiClient(config);
     }
 
     private int countOperations(OpenAPI openAPI) {

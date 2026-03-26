@@ -7,6 +7,7 @@ A production-quality Java library that converts Apigee API proxy bundles (ZIP fi
 - **OpenAPI 3.0 Output**: Generates OpenAPI 3.0.x specifications (not legacy Swagger 2.0)
 - **Multiple Output Formats**: Supports both JSON and YAML output
 - **Offline Operation**: Works entirely from local files - no Apigee connection required
+- **Apigee API Integration**: Download bundles directly from Apigee using service account credentials
 - **Smart Path Extraction**: Extracts paths from conditional flows with fallback strategies
 - **Parameter Inference**: Extracts query parameters, headers, and path parameters from policy XMLs
 - **Security Detection**: Automatically detects API Key, OAuth2, and Basic Auth from policies
@@ -32,7 +33,7 @@ implementation 'com.apigee.openapi:apigee-bundle-to-openapi:1.0.0'
 
 ## Quick Start
 
-### Basic Conversion
+### Option 1: Convert from Local File/Directory
 
 ```java
 import com.apigee.openapi.converter.ApigeeToOpenApiConverter;
@@ -49,6 +50,106 @@ ConversionResult result = converter.convert(Path.of("./my-proxy"));
 OpenAPI openAPI = result.getOpenAPI();
 System.out.println("Converted " + result.getPathCount() + " paths");
 ```
+
+### Option 2: Convert Directly from Apigee API (Recommended)
+
+No need to manually download the proxy bundle! The library can fetch it directly from Apigee using your service account credentials:
+
+```java
+import com.apigee.openapi.converter.ApigeeToOpenApiConverter;
+import com.apigee.openapi.converter.ApigeeApiConfig;
+import com.apigee.openapi.converter.ConversionResult;
+
+// Configure Apigee API connection with service account
+ApigeeApiConfig config = ApigeeApiConfig.builder()
+    .organization("my-gcp-project")                           // Your Apigee org
+    .serviceAccountKeyPath("/path/to/service-account.json")   // GCP service account JSON
+    .build();
+
+// Create converter and convert directly from Apigee
+ApigeeToOpenApiConverter converter = new ApigeeToOpenApiConverter();
+ConversionResult result = converter.convertFromApigee(config, "my-proxy");
+
+// Get the OpenAPI spec as YAML
+String yaml = converter.writeToString(result.getOpenAPI(), OutputFormat.YAML);
+System.out.println(yaml);
+```
+
+### Even Simpler - One-liner to YAML
+
+```java
+String yaml = converter.convertFromApigeeToYaml(config, "my-proxy");
+```
+
+## Apigee API Integration
+
+### Authentication Options
+
+#### Service Account JSON File
+```java
+ApigeeApiConfig config = ApigeeApiConfig.builder()
+    .organization("my-org")
+    .serviceAccountKeyPath("/path/to/service-account.json")
+    .build();
+```
+
+#### Service Account JSON String
+```java
+String jsonKey = "{ \"type\": \"service_account\", ... }";
+
+ApigeeApiConfig config = ApigeeApiConfig.builder()
+    .organization("my-org")
+    .serviceAccountKeyJson(jsonKey)
+    .build();
+```
+
+#### Application Default Credentials
+```java
+ApigeeApiConfig config = ApigeeApiConfig.builder()
+    .organization("my-org")
+    .useApplicationDefaultCredentials()  // Uses GOOGLE_APPLICATION_CREDENTIALS env var
+    .build();
+```
+
+### Convert Specific Revision
+
+```java
+// Convert a specific revision instead of latest
+ConversionResult result = converter.convertFromApigee(config, "my-proxy", "5", options);
+```
+
+### List Proxies and Revisions
+
+```java
+// Create API client for management operations
+ApigeeManagementApiClient client = converter.createApiClient(config);
+
+// List all proxies in the organization
+List<String> proxies = client.listProxies();
+System.out.println("Proxies: " + proxies);
+
+// List revisions for a specific proxy
+List<String> revisions = client.listRevisions("my-proxy");
+System.out.println("Revisions: " + revisions);
+
+// Get the latest revision number
+String latest = client.getLatestRevision("my-proxy");
+System.out.println("Latest revision: " + latest);
+```
+
+### Convert and Save to File
+
+```java
+// Convert from Apigee and save directly to file
+converter.convertFromApigeeAndSave(
+    config,
+    "my-proxy",
+    Path.of("./output/my-proxy-openapi.yaml"),
+    ConversionOptions.defaults()
+);
+```
+
+## Local File Conversion
 
 ### Convert to YAML String
 
@@ -181,8 +282,20 @@ This library addresses the limitations of the original `apigee2openapi` Node.js 
 | Output Format | JSON only | JSON & YAML |
 | No Flows Handling | None | Fallback extraction |
 | Parameter Extraction | None | From policy XMLs |
-| Connectivity | Requires Apigee API | Offline only |
+| Connectivity | Requires Apigee API | Both API & Offline |
 | Usage | CLI only | Java library API |
+| Authentication | Basic auth only | Service account (OAuth2) |
+
+## Service Account Setup
+
+To use the Apigee API integration, you need a GCP service account with the following roles:
+
+1. **Create a service account** in your GCP project
+2. **Grant roles**:
+   - `roles/apigee.apiAdmin` - For reading proxy configurations
+   - Or `roles/apigee.readOnlyAdmin` - For read-only access
+3. **Download the JSON key file**
+4. **Use the key file** with `ApigeeApiConfig.builder().serviceAccountKeyPath(...)`
 
 ## Requirements
 
@@ -206,6 +319,7 @@ mvn test
 
 - [Swagger Parser](https://github.com/swagger-api/swagger-parser) - OpenAPI model and utilities
 - [Jackson](https://github.com/FasterXML/jackson) - JSON/YAML processing
+- [Google Auth Library](https://github.com/googleapis/google-auth-library-java) - Service account authentication
 - [SLF4J](https://www.slf4j.org/) - Logging facade
 
 ## License

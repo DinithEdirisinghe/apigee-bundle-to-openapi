@@ -1,0 +1,79 @@
+openapi: 3.0.3
+info:
+  title: Jsonplaceholder Todo Api
+  description: A proxy for the JSONPlaceholder todos service to test Apigee capabilities.
+  version: 1.0.20
+servers:
+- url: https://jsonplaceholder.typicode.com/
+  description: Backend Server
+security:
+- bearerAuth: []
+tags:
+- name: todos
+  description: Todos operations
+paths:
+  /todos:
+    get:
+      tags:
+      - todos
+      summary: List all todos
+      operationId: getTodos
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+    post:
+      tags:
+      - todos
+      summary: Create a new todo
+      operationId: postTodos
+      responses:
+        "201":
+          description: Created
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+  /todos/{id}:
+    get:
+      tags:
+      - todos
+      summary: Get a specific todo by ID
+      operationId: getTodosById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      description: Bearer token authentication
+      scheme: bearer
+      bearerFormat: JWT
