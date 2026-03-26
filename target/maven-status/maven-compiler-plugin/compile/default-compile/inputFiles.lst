@@ -8,6 +8,7 @@ C:\Apigee to openAPI Java Library\apigee-bundle-to-openapi\src\main\java\com\api
 C:\Apigee to openAPI Java Library\apigee-bundle-to-openapi\src\main\java\com\apigee\openapi\converter\extractor\PathExtractor.java
 C:\Apigee to openAPI Java Library\apigee-bundle-to-openapi\src\main\java\com\apigee\openapi\converter\extractor\SecurityExtractor.java
 C:\Apigee to openAPI Java Library\apigee-bundle-to-openapi\src\main\java\com\apigee\openapi\converter\generator\OpenApiGenerator.java
+C:\Apigee to openAPI Java Library\apigee-bundle-to-openapi\src\main\java\com\apigee\openapi\converter\InspectPolicies.java
 C:\Apigee to openAPI Java Library\apigee-bundle-to-openapi\src\main\java\com\apigee\openapi\converter\model\ApigeeBundle.java
 C:\Apigee to openAPI Java Library\apigee-bundle-to-openapi\src\main\java\com\apigee\openapi\converter\model\Flow.java
 C:\Apigee to openAPI Java Library\apigee-bundle-to-openapi\src\main\java\com\apigee\openapi\converter\model\Policy.java

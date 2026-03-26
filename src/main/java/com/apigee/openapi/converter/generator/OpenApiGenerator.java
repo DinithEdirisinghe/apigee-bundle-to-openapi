@@ -162,8 +162,9 @@ public class OpenApiGenerator {
      */
     private List<Server> generateServers(ApigeeBundle bundle, ConversionOptions options) {
         List<Server> servers = new ArrayList<>();
+        String basePath = bundle.getBasePath() != null ? bundle.getBasePath() : "";
 
-        // Use provided server URL if available
+        // Priority 1: Use explicitly provided server URL
         if (options.getServerUrl() != null && !options.getServerUrl().isEmpty()) {
             Server server = new Server();
             server.setUrl(options.getServerUrl());
@@ -172,26 +173,48 @@ public class OpenApiGenerator {
             return servers;
         }
 
-        // Try to extract from target endpoint
-        Optional<TargetEndpoint> targetOpt = bundle.getPrimaryTargetEndpoint();
-        if (targetOpt.isPresent()) {
-            TargetEndpoint target = targetOpt.get();
-            if (target.getUrl() != null) {
-                Server server = new Server();
-                server.setUrl(target.getUrl());
-                server.setDescription("Backend Server");
-                servers.add(server);
+        // Priority 2: Use proxy hostname to construct the Apigee gateway URL
+        if (options.getProxyHostname() != null && !options.getProxyHostname().isEmpty()) {
+            Server server = new Server();
+            String hostname = options.getProxyHostname();
+            // Ensure hostname doesn't have protocol prefix
+            if (hostname.startsWith("http://") || hostname.startsWith("https://")) {
+                server.setUrl(hostname + basePath);
+            } else {
+                server.setUrl("https://" + hostname + basePath);
+            }
+            server.setDescription("Apigee Proxy Gateway");
+            servers.add(server);
+            return servers;
+        }
+
+        // Priority 3: Use backend URL only if explicitly requested
+        if (options.isUseBackendUrl()) {
+            Optional<TargetEndpoint> targetOpt = bundle.getPrimaryTargetEndpoint();
+            if (targetOpt.isPresent()) {
+                TargetEndpoint target = targetOpt.get();
+                if (target.getUrl() != null) {
+                    Server server = new Server();
+                    server.setUrl(target.getUrl());
+                    server.setDescription("Backend Server (direct access)");
+                    servers.add(server);
+                    log.warn("Using backend URL as server - this may not be publicly accessible");
+                    return servers;
+                }
             }
         }
 
-        // Add a placeholder server if none found
-        if (servers.isEmpty()) {
-            Server server = new Server();
-            String basePath = bundle.getBasePath() != null ? bundle.getBasePath() : "/" + bundle.getName();
-            server.setUrl("https://api.example.com" + basePath);
-            server.setDescription("API Server (placeholder URL)");
-            servers.add(server);
+        // Priority 4: Default - use a placeholder with basePath
+        // This is the safest default as it doesn't expose internal URLs
+        Server server = new Server();
+        if (basePath.isEmpty() || basePath.equals("/")) {
+            server.setUrl("https://{apigee-hostname}");
+            server.setDescription("Apigee Proxy Gateway - replace {apigee-hostname} with your proxy hostname");
+        } else {
+            server.setUrl("https://{apigee-hostname}" + basePath);
+            server.setDescription("Apigee Proxy Gateway - replace {apigee-hostname} with your proxy hostname");
         }
+        servers.add(server);
 
         return servers;
     }

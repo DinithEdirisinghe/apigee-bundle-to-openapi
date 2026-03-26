@@ -355,6 +355,29 @@ public class ApigeeToOpenApiConverter {
         log.info("Converting proxy '{}' from Apigee organization '{}'", 
                 proxyName, config.getOrganization());
         
+        // Merge proxyHostname from config into options if not already set
+        ConversionOptions effectiveOptions = options;
+        if (config.getProxyHostname() != null && options.getProxyHostname() == null) {
+            effectiveOptions = ConversionOptions.builder()
+                    .outputFormat(options.getOutputFormat())
+                    .title(options.getTitle())
+                    .version(options.getVersion())
+                    .description(options.getDescription())
+                    .contactName(options.getContactName())
+                    .contactEmail(options.getContactEmail())
+                    .contactUrl(options.getContactUrl())
+                    .licenseName(options.getLicenseName())
+                    .licenseUrl(options.getLicenseUrl())
+                    .serverUrl(options.getServerUrl())
+                    .proxyHostname(config.getProxyHostname())
+                    .useBackendUrl(options.isUseBackendUrl())
+                    .includeDefaultResponses(options.isIncludeDefaultResponses())
+                    .includeSecuritySchemes(options.isIncludeSecuritySchemes())
+                    .generateOperationIds(options.isGenerateOperationIds())
+                    .useFallbackExtraction(options.isUseFallbackExtraction())
+                    .build();
+        }
+        
         try {
             // Create API client
             ApigeeManagementApiClient apiClient = new ApigeeManagementApiClient(config);
@@ -385,7 +408,7 @@ public class ApigeeToOpenApiConverter {
             }
 
             // Generate OpenAPI spec
-            OpenAPI openAPI = openApiGenerator.generate(bundle, options);
+            OpenAPI openAPI = openApiGenerator.generate(bundle, effectiveOptions);
 
             // Count operations and paths
             int pathCount = openAPI.getPaths() != null ? openAPI.getPaths().size() : 0;

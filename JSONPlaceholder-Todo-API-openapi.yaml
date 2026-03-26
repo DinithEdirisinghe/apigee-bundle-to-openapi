@@ -4,10 +4,10 @@ info:
   description: A proxy for the JSONPlaceholder todos service to test Apigee capabilities.
   version: 1.0.20
 servers:
-- url: https://jsonplaceholder.typicode.com/
-  description: Backend Server
+- url: https://130.211.6.177.nip.io/jsonplaceholder-todo-api
+  description: Apigee Proxy Gateway
 security:
-- bearerAuth: []
+- ApiKeyAuth: []
 tags:
 - name: todos
   description: Todos operations
@@ -72,8 +72,8 @@ paths:
           description: Internal Server Error
 components:
   securitySchemes:
-    bearerAuth:
-      type: http
-      description: Bearer token authentication
-      scheme: bearer
-      bearerFormat: JWT
+    ApiKeyAuth:
+      type: apiKey
+      description: "JWT token authentication (Issuer: https://integrator-7535621.okta.com/oauth2/default)"
+      name: ApiKey
+      in: header

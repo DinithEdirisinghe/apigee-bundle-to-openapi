@@ -33,6 +33,7 @@ public class Policy {
         EXTRACT_VARIABLES,
         ASSIGN_MESSAGE,
         VERIFY_API_KEY,
+        VERIFY_JWT,
         OAUTH_V2,
         BASIC_AUTH,
         QUOTA,
@@ -137,6 +138,7 @@ public class Policy {
      */
     public boolean isSecurityPolicy() {
         return type == PolicyType.VERIFY_API_KEY ||
+               type == PolicyType.VERIFY_JWT ||
                type == PolicyType.OAUTH_V2 ||
                type == PolicyType.BASIC_AUTH;
     }

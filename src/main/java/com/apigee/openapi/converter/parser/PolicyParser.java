@@ -80,6 +80,9 @@ public class PolicyParser {
                         case VERIFY_API_KEY:
                             parseVerifyApiKey(reader, policy);
                             break;
+                        case VERIFY_JWT:
+                            parseVerifyJWT(reader, policy);
+                            break;
                         case OAUTH_V2:
                             parseOAuthV2(reader, policy);
                             break;
@@ -111,6 +114,8 @@ public class PolicyParser {
                 return PolicyType.ASSIGN_MESSAGE;
             case "VerifyAPIKey":
                 return PolicyType.VERIFY_API_KEY;
+            case "VerifyJWT":
+                return PolicyType.VERIFY_JWT;
             case "OAuthV2":
                 return PolicyType.OAUTH_V2;
             case "BasicAuthentication":
@@ -543,6 +548,53 @@ public class PolicyParser {
             return ref.substring(lastDot + 1);
         }
         return ref;
+    }
+
+    private void parseVerifyJWT(XMLStreamReader reader, Policy policy) throws XMLStreamException {
+        String rootElement = reader.getLocalName();
+
+        while (reader.hasNext()) {
+            int event = reader.next();
+            if (event == XMLStreamConstants.START_ELEMENT) {
+                String elementName = reader.getLocalName();
+                switch (elementName) {
+                    case "DisplayName":
+                        policy.setDisplayName(readElementText(reader));
+                        break;
+                    case "Source":
+                        // Parse Source element like "request.header.ApiKey"
+                        String source = readElementText(reader);
+                        if (source != null && !source.isEmpty()) {
+                            policy.setConfigValue("source", source);
+                            
+                            // Extract location and header name
+                            if (source.contains("header")) {
+                                policy.setConfigValue("tokenLocation", "header");
+                                String headerName = extractRefName(source);
+                                policy.setConfigValue("tokenHeaderName", headerName);
+                            } else if (source.contains("queryparam")) {
+                                policy.setConfigValue("tokenLocation", "query");
+                                String paramName = extractRefName(source);
+                                policy.setConfigValue("tokenParamName", paramName);
+                            }
+                        }
+                        break;
+                    case "Algorithm":
+                        policy.setConfigValue("algorithm", readElementText(reader));
+                        break;
+                    case "Issuer":
+                        policy.setConfigValue("issuer", readElementText(reader));
+                        break;
+                    case "Audience":
+                        policy.setConfigValue("audience", readElementText(reader));
+                        break;
+                }
+            } else if (event == XMLStreamConstants.END_ELEMENT) {
+                if (reader.getLocalName().equals(rootElement)) {
+                    break;
+                }
+            }
+        }
     }
 
     private void parseOAuthV2(XMLStreamReader reader, Policy policy) throws XMLStreamException {

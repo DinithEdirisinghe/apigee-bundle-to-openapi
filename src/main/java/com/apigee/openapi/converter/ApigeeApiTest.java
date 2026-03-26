@@ -11,10 +11,11 @@ public class ApigeeApiTest {
         try {
             System.out.println("=== Apigee API Integration Test ===\n");
             
-            // Configure with service account
+            // Configure with service account AND proxy hostname
             ApigeeApiConfig config = ApigeeApiConfig.builder()
                 .organization("apigee-new-491006")
                 .serviceAccountKeyPath("C:\\Users\\Dinith Edirisinghe\\Downloads\\apigee-new-491006-3b31424504ec.json")
+                .proxyHostname("130.211.6.177.nip.io")  // Your Apigee gateway hostname
                 .build();
             
             System.out.println("✓ Config created: " + config);

@@ -67,11 +67,13 @@ public class ApigeeApiConfig {
     private final String organization;
     private final String baseUrl;
     private final GoogleCredentials credentials;
+    private final String proxyHostname;
 
     private ApigeeApiConfig(Builder builder) {
         this.organization = Objects.requireNonNull(builder.organization, "organization is required");
         this.baseUrl = builder.baseUrl != null ? builder.baseUrl : DEFAULT_APIGEE_API_BASE_URL;
         this.credentials = Objects.requireNonNull(builder.credentials, "credentials are required");
+        this.proxyHostname = builder.proxyHostname;
     }
 
     /**
@@ -93,6 +95,15 @@ public class ApigeeApiConfig {
      */
     public GoogleCredentials getCredentials() {
         return credentials;
+    }
+
+    /**
+     * Returns the Apigee proxy hostname (e.g., "10.43.65.12.nip.io").
+     * This is used to construct the server URL in the generated OpenAPI spec.
+     * May be null if not set.
+     */
+    public String getProxyHostname() {
+        return proxyHostname;
     }
 
     /**
@@ -121,6 +132,7 @@ public class ApigeeApiConfig {
         private String organization;
         private String baseUrl;
         private GoogleCredentials credentials;
+        private String proxyHostname;
 
         private Builder() {
         }
@@ -134,6 +146,21 @@ public class ApigeeApiConfig {
          */
         public Builder organization(String organization) {
             this.organization = organization;
+            return this;
+        }
+
+        /**
+         * Sets the Apigee proxy hostname for the generated OpenAPI spec.
+         * This is the hostname where your Apigee gateway is accessible
+         * (e.g., "10.43.65.12.nip.io" or "api.mycompany.com").
+         * 
+         * The server URL in the generated spec will be: https://{proxyHostname}{basePath}
+         *
+         * @param proxyHostname The Apigee proxy gateway hostname
+         * @return this builder
+         */
+        public Builder proxyHostname(String proxyHostname) {
+            this.proxyHostname = proxyHostname;
             return this;
         }
 

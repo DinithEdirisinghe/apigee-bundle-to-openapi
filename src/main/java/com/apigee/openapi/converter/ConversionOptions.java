@@ -42,6 +42,8 @@ public class ConversionOptions {
     
     // Server info
     private String serverUrl;
+    private String proxyHostname;
+    private boolean useBackendUrl = false;  // Default: do NOT use backend URL
     
     // Conversion behavior
     private boolean includeDefaultResponses = true;
@@ -105,6 +107,14 @@ public class ConversionOptions {
 
     public String getServerUrl() {
         return serverUrl;
+    }
+
+    public String getProxyHostname() {
+        return proxyHostname;
+    }
+
+    public boolean isUseBackendUrl() {
+        return useBackendUrl;
     }
 
     public boolean isIncludeDefaultResponses() {
@@ -203,9 +213,31 @@ public class ConversionOptions {
 
         /**
          * Sets the server URL.
+         * This takes precedence over proxyHostname.
          */
         public Builder serverUrl(String serverUrl) {
             options.serverUrl = serverUrl;
+            return this;
+        }
+
+        /**
+         * Sets the Apigee proxy hostname (e.g., "10.43.65.12.nip.io" or "api.example.com").
+         * The final server URL will be: https://{proxyHostname}{basePath}
+         * This is useful when you want to generate a spec that points to the Apigee gateway
+         * rather than the backend.
+         */
+        public Builder proxyHostname(String proxyHostname) {
+            options.proxyHostname = proxyHostname;
+            return this;
+        }
+
+        /**
+         * Sets whether to use the backend/target URL as the server URL.
+         * Default is FALSE - backend URLs are typically private/internal.
+         * Only set to true if your backend is publicly accessible.
+         */
+        public Builder useBackendUrl(boolean useBackendUrl) {
+            options.useBackendUrl = useBackendUrl;
             return this;
         }
 

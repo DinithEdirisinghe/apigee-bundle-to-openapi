@@ -209,6 +209,9 @@ public class SecurityExtractor {
             case VERIFY_API_KEY:
                 extractApiKeySecurity(policy, result);
                 break;
+            case VERIFY_JWT:
+                extractJwtSecurity(policy, result);
+                break;
             case OAUTH_V2:
                 extractOAuth2Security(policy, result);
                 break;
@@ -242,6 +245,39 @@ public class SecurityExtractor {
         result.addScheme(scheme);
 
         log.debug("Extracted API Key security: {}", scheme);
+    }
+
+    private void extractJwtSecurity(Policy policy, SecurityExtractionResult result) {
+        String location = policy.getConfigValue("tokenLocation", String.class);
+        String headerName = policy.getConfigValue("tokenHeaderName", String.class);
+        String paramName = policy.getConfigValue("tokenParamName", String.class);
+        String issuer = policy.getConfigValue("issuer", String.class);
+
+        // Use apiKey type with the actual header name from the policy
+        SecurityScheme scheme = new SecurityScheme("ApiKeyAuth", SecurityScheme.Type.API_KEY);
+        
+        if ("header".equals(location)) {
+            scheme.setIn(SecurityScheme.In.HEADER);
+            scheme.setParameterName(headerName != null ? headerName : "Authorization");
+        } else if ("query".equals(location)) {
+            scheme.setIn(SecurityScheme.In.QUERY);
+            scheme.setParameterName(paramName != null ? paramName : "token");
+        } else {
+            // Default to header
+            scheme.setIn(SecurityScheme.In.HEADER);
+            scheme.setParameterName(headerName != null ? headerName : "Authorization");
+        }
+
+        // Build description
+        StringBuilder desc = new StringBuilder("JWT token authentication");
+        if (issuer != null) {
+            desc.append(" (Issuer: ").append(issuer).append(")");
+        }
+        scheme.setDescription(desc.toString());
+        
+        result.addScheme(scheme);
+
+        log.debug("Extracted JWT security: {}", scheme);
     }
 
     @SuppressWarnings("unchecked")
@@ -378,6 +414,8 @@ public class SecurityExtractor {
         switch (policy.getType()) {
             case VERIFY_API_KEY:
                 return "apiKey";
+            case VERIFY_JWT:
+                return "ApiKeyAuth";
             case OAUTH_V2:
                 return "oauth2";
             case BASIC_AUTH:
