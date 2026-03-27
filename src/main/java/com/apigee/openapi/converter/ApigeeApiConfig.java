@@ -92,7 +92,7 @@ public class ApigeeApiConfig {
     }
 
     /**
-     * Returns the Apigee organization name.
+     * Returns the Apigee organization name
      */
     public String getOrganization() {
         return organization;
