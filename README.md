@@ -272,20 +272,6 @@ my-proxy/
 ### From Target Endpoints
 - Backend server URLs
 
-## Improvements Over Original Node.js Tool
-
-This library addresses the limitations of the original `apigee2openapi` Node.js tool:
-
-| Feature | Original Tool | This Library |
-|---------|---------------|--------------|
-| Output Spec | OpenAPI 2.0 (Swagger) | OpenAPI 3.0.x |
-| Output Format | JSON only | JSON & YAML |
-| No Flows Handling | None | Fallback extraction |
-| Parameter Extraction | None | From policy XMLs |
-| Connectivity | Requires Apigee API | Both API & Offline |
-| Usage | CLI only | Java library API |
-| Authentication | Basic auth only | Service account (OAuth2) |
-
 ## Service Account Setup
 
 To use the Apigee API integration, you need a GCP service account with the following roles:
