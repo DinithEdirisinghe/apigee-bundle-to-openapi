@@ -506,6 +506,39 @@ public class ApigeeToOpenApiConverter {
     }
 
     /**
+     * Converts an Apigee proxy with custom options and returns the OpenAPI spec as a YAML string.
+     * Downloads the latest revision from the Apigee Management API.
+     *
+     * @param config    Apigee API configuration
+     * @param proxyName Name of the proxy
+     * @param options   Conversion options for customizing the output
+     * @return OpenAPI specification as YAML string
+     * @throws ConversionException if conversion fails
+     */
+    public String convertFromApigeeToYaml(ApigeeApiConfig config, String proxyName, 
+            ConversionOptions options) throws ConversionException {
+        ConversionResult result = convertFromApigee(config, proxyName, null, options);
+        return writeToString(result.getOpenAPI(), OutputFormat.YAML);
+    }
+
+    /**
+     * Converts a specific revision of an Apigee proxy with custom options 
+     * and returns the OpenAPI spec as a YAML string.
+     *
+     * @param config    Apigee API configuration
+     * @param proxyName Name of the proxy
+     * @param revision  Revision number (or null for latest)
+     * @param options   Conversion options for customizing the output
+     * @return OpenAPI specification as YAML string
+     * @throws ConversionException if conversion fails
+     */
+    public String convertFromApigeeToYaml(ApigeeApiConfig config, String proxyName, 
+            String revision, ConversionOptions options) throws ConversionException {
+        ConversionResult result = convertFromApigee(config, proxyName, revision, options);
+        return writeToString(result.getOpenAPI(), OutputFormat.YAML);
+    }
+
+    /**
      * Converts an Apigee proxy and returns the OpenAPI spec as a JSON string.
      * Downloads the latest revision from the Apigee Management API.
      *
@@ -517,6 +550,39 @@ public class ApigeeToOpenApiConverter {
     public String convertFromApigeeToJson(ApigeeApiConfig config, String proxyName) 
             throws ConversionException {
         ConversionResult result = convertFromApigee(config, proxyName);
+        return writeToString(result.getOpenAPI(), OutputFormat.JSON);
+    }
+
+    /**
+     * Converts an Apigee proxy with custom options and returns the OpenAPI spec as a JSON string.
+     * Downloads the latest revision from the Apigee Management API.
+     *
+     * @param config    Apigee API configuration
+     * @param proxyName Name of the proxy
+     * @param options   Conversion options for customizing the output
+     * @return OpenAPI specification as JSON string
+     * @throws ConversionException if conversion fails
+     */
+    public String convertFromApigeeToJson(ApigeeApiConfig config, String proxyName, 
+            ConversionOptions options) throws ConversionException {
+        ConversionResult result = convertFromApigee(config, proxyName, null, options);
+        return writeToString(result.getOpenAPI(), OutputFormat.JSON);
+    }
+
+    /**
+     * Converts a specific revision of an Apigee proxy with custom options 
+     * and returns the OpenAPI spec as a JSON string.
+     *
+     * @param config    Apigee API configuration
+     * @param proxyName Name of the proxy
+     * @param revision  Revision number (or null for latest)
+     * @param options   Conversion options for customizing the output
+     * @return OpenAPI specification as JSON string
+     * @throws ConversionException if conversion fails
+     */
+    public String convertFromApigeeToJson(ApigeeApiConfig config, String proxyName, 
+            String revision, ConversionOptions options) throws ConversionException {
+        ConversionResult result = convertFromApigee(config, proxyName, revision, options);
         return writeToString(result.getOpenAPI(), OutputFormat.JSON);
     }
 

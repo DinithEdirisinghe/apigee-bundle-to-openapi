@@ -2,6 +2,17 @@
 
 A production-quality Java library that converts Apigee API proxy bundles (ZIP files or extracted directories) into OpenAPI 3.0 specifications.
 
+## 🆕 What's New in v1.1.0
+
+- **🔐 Environment Variable Support** - New `serviceAccountKeyFromEnv()` method for easier credential management
+- **📄 Enhanced JSON/YAML Methods** - Both formats now support custom options and specific revisions
+- **📚 Improved Documentation** - Added QUICK_REFERENCE.md and comprehensive examples
+- **🐳 Better Container Support** - Perfect for Docker, Kubernetes, and CI/CD pipelines
+
+See [CHANGELOG.md](CHANGELOG.md) for full details.
+
+---
+
 ## Features
 
 - **OpenAPI 3.0 Output**: Generates OpenAPI 3.0.x specifications (not legacy Swagger 2.0)
@@ -21,14 +32,14 @@ A production-quality Java library that converts Apigee API proxy bundles (ZIP fi
 <dependency>
     <groupId>io.github.dinithedirisinghe</groupId>
     <artifactId>apigee-bundle-to-openapi</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 
 ### Gradle
 
 ```groovy
-implementation 'io.github.dinithedirisinghe:apigee-bundle-to-openapi:1.0.0'
+implementation 'io.github.dinithedirisinghe:apigee-bundle-to-openapi:1.1.0'
 ```
 
 ## Quick Start
@@ -70,15 +81,33 @@ ApigeeApiConfig config = ApigeeApiConfig.builder()
 ApigeeToOpenApiConverter converter = new ApigeeToOpenApiConverter();
 ConversionResult result = converter.convertFromApigee(config, "my-proxy");
 
-// Get the OpenAPI spec as YAML
+// Get the OpenAPI spec as YAML or JSON
 String yaml = converter.writeToString(result.getOpenAPI(), OutputFormat.YAML);
-System.out.println(yaml);
+String json = converter.writeToString(result.getOpenAPI(), OutputFormat.JSON);
 ```
 
-### Even Simpler - One-liner to YAML
+### Even Simpler - One-liner Conversions
 
 ```java
+// Get as YAML string
 String yaml = converter.convertFromApigeeToYaml(config, "my-proxy");
+
+// Get as JSON string
+String json = converter.convertFromApigeeToJson(config, "my-proxy");
+
+// With custom options
+ConversionOptions options = ConversionOptions.builder()
+    .title("My API")
+    .version("2.0.0")
+    .serverUrl("https://api.example.com")
+    .build();
+
+String yaml = converter.convertFromApigeeToYaml(config, "my-proxy", options);
+String json = converter.convertFromApigeeToJson(config, "my-proxy", options);
+
+// Specific revision with options
+String yaml = converter.convertFromApigeeToYaml(config, "my-proxy", "5", options);
+String json = converter.convertFromApigeeToJson(config, "my-proxy", "5", options);
 ```
 
 ## Apigee API Integration

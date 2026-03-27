@@ -7,7 +7,7 @@
     <!-- CHANGED: groupId must match your Sonatype namespace -->
     <groupId>io.github.dinithedirisinghe</groupId>
     <artifactId>apigee-bundle-to-openapi</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <packaging>jar</packaging>
 
     <name>Apigee Bundle to OpenAPI Converter</name>

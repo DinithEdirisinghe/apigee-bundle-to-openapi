@@ -100,3 +100,11 @@ secrets/
 # ======================
 test-output/
 surefire-reports/
+
+# ======================
+# Generated OpenAPI Files
+# ======================
+*-openapi.json
+*-openapi.yaml
+test-openapi.*
+**/test-openapi.*

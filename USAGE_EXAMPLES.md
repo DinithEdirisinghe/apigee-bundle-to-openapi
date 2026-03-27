@@ -1,14 +1,17 @@
 # Usage Examples
 
+> **Version 1.1.0** - Updated with new environment variable support and enhanced JSON/YAML methods
+
 ## Quick Start: Convert from Apigee API (Recommended)
 
 The easiest way to use this library is to connect directly to your Apigee organization:
 
+### Quick Start - YAML Output
 ```java
 import com.apigee.openapi.converter.ApigeeToOpenApiConverter;
 import com.apigee.openapi.converter.ApigeeApiConfig;
 
-public class QuickStart {
+public class QuickStartYaml {
     public static void main(String[] args) throws Exception {
         // Configure Apigee connection
         ApigeeApiConfig config = ApigeeApiConfig.builder()
@@ -25,7 +28,55 @@ public class QuickStart {
 }
 ```
 
+### Quick Start - JSON Output
+```java
+import com.apigee.openapi.converter.ApigeeToOpenApiConverter;
+import com.apigee.openapi.converter.ApigeeApiConfig;
+
+public class QuickStartJson {
+    public static void main(String[] args) throws Exception {
+        // Configure Apigee connection
+        ApigeeApiConfig config = ApigeeApiConfig.builder()
+            .organization("my-gcp-project")
+            .serviceAccountKeyPath("/path/to/service-account.json")
+            .build();
+
+        // Convert proxy to OpenAPI JSON - one line!
+        ApigeeToOpenApiConverter converter = new ApigeeToOpenApiConverter();
+        String json = converter.convertFromApigeeToJson(config, "my-proxy");
+        
+        System.out.println(json);
+    }
+}
+```
+
 ## Apigee API Examples
+
+### Example A0: One-liner Conversions (Simplest)
+```java
+import com.apigee.openapi.converter.*;
+
+public class ApiExample0 {
+    public static void main(String[] args) throws Exception {
+        ApigeeApiConfig config = ApigeeApiConfig.builder()
+            .organization("my-gcp-project")
+            .serviceAccountKeyPath("service-account.json")
+            .build();
+
+        ApigeeToOpenApiConverter converter = new ApigeeToOpenApiConverter();
+        
+        // Get as YAML (one line)
+        String yaml = converter.convertFromApigeeToYaml(config, "my-proxy");
+        System.out.println("=== YAML Output ===");
+        System.out.println(yaml);
+        
+        // Get as JSON (one line)
+        String json = converter.convertFromApigeeToJson(config, "my-proxy");
+        System.out.println("\n=== JSON Output ===");
+        System.out.println(json);
+    }
+}
+```
 
 ### Example A1: Download and Convert Latest Revision
 ```java
@@ -49,9 +100,12 @@ public class ApiExample1 {
         System.out.println("Paths: " + result.getPathCount());
         System.out.println("Operations: " + result.getOperationCount());
         
-        // Get as YAML string
+        // Get as YAML or JSON string
         String yaml = converter.writeToString(result.getOpenAPI(), OutputFormat.YAML);
-        System.out.println(yaml);
+        String json = converter.writeToString(result.getOpenAPI(), OutputFormat.JSON);
+        
+        System.out.println("YAML:\n" + yaml);
+        System.out.println("JSON:\n" + json);
     }
 }
 ```
@@ -77,15 +131,56 @@ public class ApiExample2 {
 
         ApigeeToOpenApiConverter converter = new ApigeeToOpenApiConverter();
         
-        // Convert specific revision "5"
+        // Method 1: Convert and get result object (for both formats)
         ConversionResult result = converter.convertFromApigee(
             config, 
             "weather-api", 
             "5",    // specific revision
             options
         );
-        
         System.out.println("Converted revision 5: " + result.getPathCount() + " paths");
+        
+        // Method 2: One-liner to YAML with options and specific revision
+        String yaml = converter.convertFromApigeeToYaml(config, "weather-api", "5", options);
+        System.out.println(yaml);
+        
+        // Method 3: One-liner to JSON with options and specific revision
+        String json = converter.convertFromApigeeToJson(config, "weather-api", "5", options);
+        System.out.println(json);
+    }
+}
+```
+
+### Example A2b: Using Custom Options (Latest Revision)
+```java
+import com.apigee.openapi.converter.*;
+
+public class ApiExample2b {
+    public static void main(String[] args) throws Exception {
+        ApigeeApiConfig config = ApigeeApiConfig.builder()
+            .organization("my-gcp-project")
+            .serviceAccountKeyFromEnv()  // From environment variable
+            .build();
+
+        ConversionOptions options = ConversionOptions.builder()
+            .title("Payment API")
+            .version("3.0.0")
+            .description("Secure payment processing")
+            .serverUrl("https://api.payments.example.com")
+            .contactEmail("support@example.com")
+            .licenseName("Apache 2.0")
+            .build();
+
+        ApigeeToOpenApiConverter converter = new ApigeeToOpenApiConverter();
+        
+        // Convert latest revision with custom options
+        // YAML format
+        String yaml = converter.convertFromApigeeToYaml(config, "payment-api", options);
+        System.out.println("YAML with custom options:\n" + yaml);
+        
+        // JSON format
+        String json = converter.convertFromApigeeToJson(config, "payment-api", options);
+        System.out.println("JSON with custom options:\n" + json);
     }
 }
 ```
