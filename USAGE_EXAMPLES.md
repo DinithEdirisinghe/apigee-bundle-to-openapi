@@ -171,6 +171,45 @@ public class ApiExample5 {
 }
 ```
 
+### Example A6: Using Service Account from Environment Variable (Simplified)
+```java
+import com.apigee.openapi.converter.*;
+
+public class ApiExample6 {
+    public static void main(String[] args) throws Exception {
+        // Automatically reads from APIGEE_SERVICE_ACCOUNT_JSON environment variable
+        ApigeeApiConfig config = ApigeeApiConfig.builder()
+            .organization("my-gcp-project")
+            .serviceAccountKeyFromEnv()  // No need to manually read env var!
+            .build();
+
+        ApigeeToOpenApiConverter converter = new ApigeeToOpenApiConverter();
+        String yaml = converter.convertFromApigeeToYaml(config, "my-proxy");
+        System.out.println(yaml);
+    }
+}
+```
+
+Set your environment variable before running:
+```bash
+# Linux/Mac
+export APIGEE_SERVICE_ACCOUNT_JSON='{"type":"service_account","project_id":"my-project",...}'
+
+# Windows (Command Prompt)
+set APIGEE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"my-project",...}
+
+# Windows (PowerShell)
+$env:APIGEE_SERVICE_ACCOUNT_JSON='{"type":"service_account","project_id":"my-project",...}'
+```
+
+Or use a custom environment variable name:
+```java
+ApigeeApiConfig config = ApigeeApiConfig.builder()
+    .organization("my-gcp-project")
+    .serviceAccountKeyFromEnv("MY_CUSTOM_SERVICE_ACCOUNT")
+    .build();
+```
+
 ---
 
 ## Local File Examples

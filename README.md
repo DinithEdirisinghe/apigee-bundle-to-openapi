@@ -103,6 +103,30 @@ ApigeeApiConfig config = ApigeeApiConfig.builder()
     .build();
 ```
 
+#### Service Account JSON from Environment Variable
+```java
+// Reads from APIGEE_SERVICE_ACCOUNT_JSON by default
+ApigeeApiConfig config = ApigeeApiConfig.builder()
+    .organization("my-org")
+    .serviceAccountKeyFromEnv()
+    .build();
+
+// Or specify a custom environment variable name
+ApigeeApiConfig config = ApigeeApiConfig.builder()
+    .organization("my-org")
+    .serviceAccountKeyFromEnv("MY_SERVICE_ACCOUNT_JSON")
+    .build();
+```
+
+Set the environment variable:
+```bash
+# Linux/Mac
+export APIGEE_SERVICE_ACCOUNT_JSON='{"type":"service_account","project_id":"...","private_key":"..."}'
+
+# Windows
+set APIGEE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"...","private_key":"..."}
+```
+
 #### Application Default Credentials
 ```java
 ApigeeApiConfig config = ApigeeApiConfig.builder()
@@ -333,3 +357,4 @@ Contributions are welcome! Please feel free to submit issues and pull requests.
 ## Support
 
 This is not an officially supported Google product.
+

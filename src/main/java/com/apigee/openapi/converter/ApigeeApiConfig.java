@@ -50,6 +50,21 @@ import java.util.Objects;
  *     .build();
  * }</pre>
  * 
+ * <h3>Using service account JSON from environment variable:</h3>
+ * <pre>{@code
+ * // Reads from APIGEE_SERVICE_ACCOUNT_JSON by default
+ * ApigeeApiConfig config = ApigeeApiConfig.builder()
+ *     .organization("my-org")
+ *     .serviceAccountKeyFromEnv()
+ *     .build();
+ * 
+ * // Or specify a custom environment variable
+ * ApigeeApiConfig config = ApigeeApiConfig.builder()
+ *     .organization("my-org")
+ *     .serviceAccountKeyFromEnv("MY_CUSTOM_ENV_VAR")
+ *     .build();
+ * }</pre>
+ * 
  * <h3>Using pre-created GoogleCredentials:</h3>
  * <pre>{@code
  * GoogleCredentials creds = GoogleCredentials.getApplicationDefault();
@@ -256,6 +271,38 @@ public class ApigeeApiConfig {
             this.credentials = GoogleCredentials.getApplicationDefault()
                     .createScoped(Collections.singletonList(APIGEE_API_SCOPE));
             return this;
+        }
+
+        /**
+         * Sets credentials from an environment variable containing service account JSON.
+         * Defaults to "APIGEE_SERVICE_ACCOUNT_JSON" if no variable name is specified.
+         *
+         * @param envVarName The name of the environment variable
+         * @return this builder
+         * @throws IOException if the environment variable is not set or parsing fails
+         * @throws IllegalArgumentException if the environment variable is not set
+         */
+        public Builder serviceAccountKeyFromEnv(String envVarName) throws IOException {
+            String jsonKey = System.getenv(envVarName);
+            if (jsonKey == null || jsonKey.trim().isEmpty()) {
+                throw new IllegalArgumentException(
+                    "Environment variable '" + envVarName + "' is not set or empty. " +
+                    "Please set it with: export " + envVarName + "='<your-service-account-json>'"
+                );
+            }
+            return serviceAccountKeyJson(jsonKey);
+        }
+
+        /**
+         * Sets credentials from the APIGEE_SERVICE_ACCOUNT_JSON environment variable.
+         * This is a convenience method for serviceAccountKeyFromEnv("APIGEE_SERVICE_ACCOUNT_JSON").
+         *
+         * @return this builder
+         * @throws IOException if the environment variable is not set or parsing fails
+         * @throws IllegalArgumentException if the environment variable is not set
+         */
+        public Builder serviceAccountKeyFromEnv() throws IOException {
+            return serviceAccountKeyFromEnv("APIGEE_SERVICE_ACCOUNT_JSON");
         }
 
         /**
