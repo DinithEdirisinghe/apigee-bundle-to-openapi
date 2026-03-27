@@ -15,7 +15,6 @@ com\apigee\openapi\converter\ApigeeToOpenApiConverter.class
 com\apigee\openapi\converter\extractor\PathExtractor$ExtractedOperation.class
 com\apigee\openapi\converter\output\OpenApiWriter$OutputFormat.class
 com\apigee\openapi\converter\ApigeeApiConfig.class
-com\apigee\openapi\converter\ApigeeApiTest.class
 com\apigee\openapi\converter\generator\OpenApiGenerator$1.class
 com\apigee\openapi\converter\ConversionResult$Builder.class
 com\apigee\openapi\converter\extractor\ParameterExtractor.class

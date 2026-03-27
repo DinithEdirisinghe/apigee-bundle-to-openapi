@@ -19,7 +19,7 @@ A production-quality Java library that converts Apigee API proxy bundles (ZIP fi
 
 ```xml
 <dependency>
-    <groupId>com.apigee.openapi</groupId>
+    <groupId>io.github.dinithedirisinghe</groupId>
     <artifactId>apigee-bundle-to-openapi</artifactId>
     <version>1.0.0</version>
 </dependency>
@@ -28,7 +28,7 @@ A production-quality Java library that converts Apigee API proxy bundles (ZIP fi
 ### Gradle
 
 ```groovy
-implementation 'com.apigee.openapi:apigee-bundle-to-openapi:1.0.0'
+implementation 'io.github.dinithedirisinghe:apigee-bundle-to-openapi:1.0.0'
 ```
 
 ## Quick Start
